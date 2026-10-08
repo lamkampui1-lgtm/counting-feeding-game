@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>餵貪吃小動物・數數遊戲</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="game">
+<header><div class="title">餵貪吃小動物</div><div class="subtitle">每按一下，餵一粒豆豆！</div></header>
+<section class="count-area" aria-live="polite"><div id="count" class="count">0</div><div id="message" class="message">準備好未？按一下畫面開始！</div></section>
+<section id="dots" class="dots" aria-label="數量圓點"></section>
+<button id="feedButton" class="feed-button" type="button" aria-label="餵一粒豆豆"><span class="button-number">按這裡</span><span class="button-hint">餵一粒豆豆</span></button>
+<button id="resetButton" class="reset-button" type="button">重新開始</button>
+</main>
+<div id="celebration" class="celebration" aria-hidden="true"><div class="celebration-card"><div class="celebration-number" id="celebrationNumber">10</div><div class="celebration-text" id="celebrationText">好叻！數到 10！</div><div class="celebration-hint">再按一下，就會繼續數 11。</div></div></div>
+<script src="script.js"></script>
+</body>
+</html>
