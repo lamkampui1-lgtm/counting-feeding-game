@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>動物園數數樂｜1–20 廣東話互動遊戲</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:linear-gradient(135deg,#f7fff2,#e5f7ee 48%,#e9f3ff);color:#294153;touch-action:manipulation}
+#game{height:100dvh;display:flex;flex-direction:column;padding:14px;gap:10px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:64px;padding:0 10px}
+.title{font-size:clamp(23px,3vw,40px);font-weight:1000;color:#36596b}
+.level{font-size:clamp(18px,2.3vw,29px);font-weight:900;background:#fff;border-radius:999px;padding:9px 18px;box-shadow:0 5px 16px #00000010;white-space:nowrap}
+.play{position:relative;flex:1;min-height:0;border:5px solid #fff;border-radius:30px;background:linear-gradient(180deg,#e6f8ff 0%,#f6fff0 62%,#e8f7d9 62%,#e8f7d9 100%);box-shadow:0 12px 35px #52745b20;overflow:hidden;cursor:pointer;user-select:none;touch-action:manipulation}
+.sun{position:absolute;right:7%;top:7%;width:clamp(55px,7vw,90px);height:clamp(55px,7vw,90px);border-radius:50%;background:#ffe89a;box-shadow:0 0 0 12px #ffe89a35}
+.cloud{position:absolute;top:15%;left:7%;font-size:clamp(38px,6vw,75px);opacity:.75;pointer-events:none}
+.tree{position:absolute;bottom:14%;font-size:clamp(52px,7vw,90px);opacity:.9;pointer-events:none}
+.tree.left{left:2%}.tree.right{right:2%}
+.hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:3;font-size:clamp(15px,2vw,25px);font-weight:800;color:#557587;background:#ffffffc9;padding:7px 16px;border-radius:999px;white-space:nowrap;pointer-events:none}
+.number{position:absolute;top:13%;left:50%;transform:translateX(-50%);font-size:clamp(74px,12vw,140px);line-height:.9;font-weight:1000;color:#ed745f;text-shadow:0 5px 0 #fff,0 8px 14px #00000013;z-index:2;pointer-events:none}
+.counterLabel{position:absolute;top:calc(13% + clamp(80px,12vw,140px));left:50%;transform:translateX(-50%);font-size:clamp(15px,1.8vw,23px);font-weight:900;color:#547383;white-space:nowrap;z-index:2;pointer-events:none}
+.animals{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.animalHead{position:absolute;transform:translate(-50%,-50%);font-size:clamp(48px,6.5vw,84px);line-height:1;filter:drop-shadow(0 4px 3px #00000018);animation:pop .18s ease-out;user-select:none}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.25)}to{transform:translate(-50%,-50%) scale(1)}}
+.reset{position:absolute;right:14px;bottom:12px;z-index:5;border:0;background:#ffffffed;color:#60798a;font-size:16px;font-weight:900;border-radius:999px;padding:9px 15px;box-shadow:0 4px 12px #0002;cursor:pointer}
+.overlay{position:absolute;inset:0;background:#fffdf5ed;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:4;pointer-events:none}
+.overlay.show{display:flex}
+.celebrate{font-size:clamp(65px,10vw,125px)}
+.bigmsg{font-size:clamp(40px,6vw,75px);font-weight:1000;color:#ed745f}
+.submsg{font-size:clamp(20px,2.7vw,33px);font-weight:800;color:#60798a;margin-top:8px}
+@media(max-width:600px){#game{padding:7px;gap:6px}.top{padding:0 4px;min-height:54px}.hint{top:8px}.animalHead{font-size:clamp(42px,10vw,72px)}.number{top:17%}.counterLabel{top:calc(17% + clamp(78px,12vw,110px))}}
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="top">
+    <div class="title">🦒 動物園數數樂</div>
+    <div class="level" id="level">第 1 關：1–10</div>
+  </div>
+  <div class="play" id="play" aria-label="動物園互動區">
+    <div class="sun"></div>
+    <div class="cloud">☁️</div>
+    <div class="tree left">🌳</div><div class="tree right">🌴</div>
+    <div class="hint" id="hint">按畫面任意位置，出現一隻動物！</div>
+    <div class="number" id="number">0</div>
+    <div class="counterLabel">動物總數</div>
+    <div class="animals" id="animals"></div>
+    <div class="overlay" id="overlay">
+      <div class="celebrate">🎉🦁🐵</div>
+      <div class="bigmsg" id="bigmsg">20 隻動物！</div>
+      <div class="submsg" id="submsg">你完成動物園數數了！</div>
+    </div>
+    <button class="reset" id="reset">重新開始</button>
+  </div>
+</div>
+<script>
+const play=document.getElementById('play');
+const numberEl=document.getElementById('number');
+const animalsEl=document.getElementById('animals');
+const level=document.getElementById('level');
+const overlay=document.getElementById('overlay');
+const bigmsg=document.getElementById('bigmsg');
+const submsg=document.getElementById('submsg');
+const reset=document.getElementById('reset');
+
+let count=0, waitingFor11=false, finished=false, audioCtx=null;
+let animalTypeIndex=0;
+const animalTypes=[
+  {name:"獅子",head:"🦁",voice:"獅子"},
+  {name:"猴子",head:"🐵",voice:"猴子"},
+  {name:"熊貓",head:"🐼",voice:"熊貓"},
+  {name:"老虎",head:"🐯",voice:"老虎"},
+  {name:"青蛙",head:"🐸",voice:"青蛙"},
+  {name:"兔子",head:"🐰",voice:"兔子"},
+  {name:"狐狸",head:"🦊",voice:"狐狸"},
+  {name:"河馬",head:"🦛",voice:"河馬"},
+  {name:"熊",head:"🐻",voice:"熊"},
+  {name:"企鵝",head:"🐧",voice:"企鵝"}
+];
+const spoken={1:"一",2:"二",3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九",10:"十",11:"十一",12:"十二",13:"十三",14:"十四",15:"十五",16:"十六",17:"十七",18:"十八",19:"十九",20:"二十"};
+
+function speak(text){
+  if(!window.speechSynthesis)return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="zh-HK";u.rate=.84;u.pitch=1.04;
+  const voices=speechSynthesis.getVoices();
+  const v=voices.find(x=>/zh-HK|yue|Cantonese/i.test(x.lang+" "+x.name));
+  if(v)u.voice=v;
+  speechSynthesis.speak(u);
+}
+function playEatingSound(){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+    if(!audioCtx)audioCtx=new C();
+    if(audioCtx.state==="suspended")audioCtx.resume();
+    const now=audioCtx.currentTime;
+    [0,.1].forEach((off,i)=>{
+      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+      osc.type="triangle";osc.frequency.setValueAtTime(i?390:520,now+off);osc.frequency.exponentialRampToValueAtTime(i?190:250,now+off+.075);
+      filter.type="lowpass";filter.frequency.setValueAtTime(1500,now+off);
+      gain.gain.setValueAtTime(.0001,now+off);gain.gain.exponentialRampToValueAtTime(.1,now+off+.012);gain.gain.exponentialRampToValueAtTime(.0001,now+off+.09);
+      osc.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);osc.start(now+off);osc.stop(now+off+.095);
+    });
+  }catch(e){}
+}
+function getAnimalType(){
+  // Use one animal species for the entire 1–20 round, then choose a new species after reset.
+  return animalTypes[animalTypeIndex];
+}
+function render(){
+  numberEl.textContent=count;
+  level.textContent=count<=10?"第 1 關：1–10":"第 2 關：11–20";
+}
+function addAnimalAt(x,y){
+  const type=getAnimalType();
+  const head=document.createElement("span");
+  head.className="animalHead";
+  head.textContent=type.head;
+  head.setAttribute("aria-label",type.name);
+  head.style.left=x+"px";head.style.top=y+"px";
+  animalsEl.appendChild(head);
+}
+function feed(x,y){
+  if(finished)return;
+  playEatingSound();
+  if(waitingFor11){
+    waitingFor11=false;overlay.classList.remove("show");count=11;
+    addAnimalAt(x,y);render();speak(spoken[11]);return;
+  }
+  count++;
+  addAnimalAt(x,y);
+  render();
+  speak(spoken[count]);
+  if(count===10)waitingFor11=true;
+  if(count===20){
+    finished=true;
+    setTimeout(()=>{
+      overlay.classList.add("show");
+      bigmsg.textContent="20 隻動物！";
+      submsg.textContent="太叻啦！你完成數數遊戲 🎉";
+      speak("二十隻動物，太叻啦，完成數數遊戲！");
+    },300);
+  }
+}
+play.addEventListener("pointerdown",e=>{
+  if(e.target===reset)return;
+  const r=play.getBoundingClientRect();
+  const x=Math.max(55,Math.min(r.width-55,e.clientX-r.left));
+  const y=Math.max(105,Math.min(r.height-55,e.clientY-r.top));
+  feed(x,y);
+});
+reset.addEventListener("pointerdown",e=>{
+  e.stopPropagation();if(window.speechSynthesis)speechSynthesis.cancel();
+  count=0;waitingFor11=false;finished=false;animalsEl.innerHTML="";overlay.classList.remove("show");
+  animalTypeIndex=(animalTypeIndex+1)%animalTypes.length;
+  render();
+});
+speechSynthesis.getVoices();render();
+</script>
+</body>
+</html>
